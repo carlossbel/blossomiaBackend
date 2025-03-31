@@ -1,0 +1,10 @@
+# Dependencias
+node_modules/
+
+# Archivos de entorno
+.env
+*.env
+!.env.example
+
+# Otros archivos sensibles
+*.key
