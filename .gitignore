@@ -6,5 +6,7 @@ node_modules/
 *.env
 !.env.example
 
-# Otros archivos sensibles
+# Archivos de credenciales
+*serviceAccount*.json
 *.key
+"@
