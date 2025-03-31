@@ -9,3 +9,7 @@ node_modules/
 # Archivos de credenciales
 serviceAccountKey.json
 *.key
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
