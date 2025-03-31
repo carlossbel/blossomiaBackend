@@ -1,8 +1,7 @@
-// server.js - Servidor Express con conexión a Firebase
+Copyrequire('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const admin = require('firebase-admin');
-const serviceAccount = require('./serviceAccountKey.json'); // Deberás crear este archivo con tus credenciales
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const http = require('http');
@@ -11,17 +10,40 @@ const nodemailer = require('nodemailer');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 
-// Inicialización de Express
-const app = express();
-const PORT = process.env.PORT || 5000;
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  measurementId: process.env.FIREBASE_MEASUREMENT_ID
+};
 
 // Inicialización de Firebase Admin
+const serviceAccountCredentials = {
+  type: 'service_account',
+  project_id: process.env.FIREBASE_PROJECT_ID,
+  private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+  client_email: process.env.FIREBASE_CLIENT_EMAIL,
+  client_id: process.env.FIREBASE_CLIENT_ID,
+  auth_uri: 'https://accounts.google.com/o/oauth2/auth',
+  token_uri: 'https://oauth2.googleapis.com/token',
+  auth_provider_x509_cert_url: 'https://www.googleapis.com/oauth2/v1/certs',
+  client_x509_cert_url: process.env.FIREBASE_CLIENT_CERT_URL
+};
+
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://blossomia-a1db4.firebaseio.com"
+  credential: admin.credential.cert(serviceAccountCredentials),
+  databaseURL: process.env.FIREBASE_DATABASE_URL
 });
 
 const db = admin.firestore();
+
+// Inicialización de Express
+const app = express();
+const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
@@ -35,7 +57,21 @@ app.use(express.json());
 // JWT Secret
 const JWT_SECRET = process.env.JWT_SECRET || 'blossomia-secret-key';
 
-// Middleware para verificar JWT
+// Configuración de Nodemailer
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+// Resto de tu código de rutas y lógica de servidor permanece igual...
+
+// Middleware para verificar JWT (lo mantengo igual)
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   
@@ -51,20 +87,8 @@ const verifyToken = (req, res, next) => {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
-// Configuración de Nodemailer para envío de correos (reemplaza esto en tu server.js)
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'carlossbel09@gmail.com',
-    pass: process.env.EMAIL_APP_PASSWORD || 'tddpwsmtjtmjillq'
-  },
-  tls: {
-    rejectUnauthorized: false // Permite conexiones a servidores con certificados autofirmados
-  }
-});
 
-
-// Importar rutas
+// Importar rutas (si las tienes en archivos separados)
 const categoriasRoutes = require('./routes/categoriasRoutes');
 const plantasRoutes = require('./routes/plantasRoutes');
 const contactoRoutes = require('./routes/contactoRoutes');
