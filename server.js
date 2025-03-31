@@ -47,9 +47,7 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://blossomia.vercel.app'] 
-    : ['http://localhost:3000'],
+  origin: ['https://blossomia-frontend.vercel.app/', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
@@ -371,11 +369,10 @@ app.get('/api/users/profile', verifyToken, async (req, res) => {
 
 // Configuración de WebSocket
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? 'https://blossomia.vercel.app' 
-      : 'http://localhost:3000',
+    origin: ['https://blossomia-frontend.vercel.app/', 'http://localhost:3000'],
     methods: ['GET', 'POST']
   }
 });
