@@ -45,11 +45,18 @@ const db = admin.firestore();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Configuración CORS corregida - sin slash al final de las URLs
 app.use(cors({
-  origin: ['https://blossomia-frontend.vercel.app/', 'http://localhost:3000'],
-  credentials: true
+  origin: ['https://blossomia-frontend.vercel.app', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+
+// Para peticiones OPTIONS (preflight)
+app.options('*', cors());
+
+// Middleware para procesar JSON
 app.use(express.json());
 
 // JWT Secret
@@ -67,9 +74,7 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Resto de tu código de rutas y lógica de servidor permanece igual...
-
-// Middleware para verificar JWT (lo mantengo igual)
+// Middleware para verificar JWT
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
   
@@ -86,7 +91,7 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Importar rutas (si las tienes en archivos separados)
+// Importar rutas
 const categoriasRoutes = require('./routes/categoriasRoutes');
 const plantasRoutes = require('./routes/plantasRoutes');
 const contactoRoutes = require('./routes/contactoRoutes');
@@ -98,6 +103,11 @@ app.use('/api/plantas', plantasRoutes);
 app.use('/api/contacto', contactoRoutes);
 
 // RUTAS DE AUTENTICACIÓN
+
+// Ruta de prueba para verificar que el servidor está funcionando
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
 
 // Registro de usuarios
 app.post('/api/auth/register', async (req, res) => {
@@ -367,46 +377,6 @@ app.get('/api/users/profile', verifyToken, async (req, res) => {
   }
 });
 
-// Configuración de WebSocket
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: ['https://blossomia-frontend.vercel.app/', 'http://localhost:3000'],
-    methods: ['GET', 'POST']
-  }
-});
-
-// Manejar eventos de WebSocket
-io.on('connection', (socket) => {
-  console.log('Usuario conectado:', socket.id);
-  
-  // Evento para unirse a una sala personalizada (por userId)
-  socket.on('join', (userId) => {
-    socket.join(userId);
-    console.log(`Usuario ${socket.id} se unió a la sala ${userId}`);
-  });
-  
-  // Evento para notificaciones de cuidado de plantas
-  socket.on('recordatorio', (data) => {
-    // Emitir el recordatorio a todos los clientes conectados o a un usuario específico
-    if (data.userId) {
-      io.to(data.userId).emit('nuevoRecordatorio', data);
-    } else {
-      io.emit('nuevoRecordatorio', data);
-    }
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('Usuario desconectado:', socket.id);
-  });
-});
-
-// Iniciar el servidor
-server.listen(PORT, () => {
-  console.log(`Servidor ejecutándose en el puerto ${PORT}`);
-});
-
 // Restablecer contraseña
 app.post('/api/auth/reset-password', async (req, res) => {
   try {
@@ -605,5 +575,45 @@ app.post('/api/auth/verify-reset-code', async (req, res) => {
   }
 });
 
+// Configuración de WebSocket
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: ['https://blossomia-frontend.vercel.app', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  }
+});
+
+// Manejar eventos de WebSocket
+io.on('connection', (socket) => {
+  console.log('Usuario conectado:', socket.id);
+  
+  // Evento para unirse a una sala personalizada (por userId)
+  socket.on('join', (userId) => {
+    socket.join(userId);
+    console.log(`Usuario ${socket.id} se unió a la sala ${userId}`);
+  });
+  
+  // Evento para notificaciones de cuidado de plantas
+  socket.on('recordatorio', (data) => {
+    // Emitir el recordatorio a todos los clientes conectados o a un usuario específico
+    if (data.userId) {
+      io.to(data.userId).emit('nuevoRecordatorio', data);
+    } else {
+      io.emit('nuevoRecordatorio', data);
+    }
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('Usuario desconectado:', socket.id);
+  });
+});
+
+// Iniciar el servidor
+server.listen(PORT, () => {
+  console.log(`Servidor ejecutándose en el puerto ${PORT}`);
+});
 
 module.exports = app;
