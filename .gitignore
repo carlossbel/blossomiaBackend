@@ -7,6 +7,5 @@ node_modules/
 !.env.example
 
 # Archivos de credenciales
-*serviceAccount*.json
+serviceAccountKey.json
 *.key
-"@
